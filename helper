@@ -1,0 +1,56 @@
+
+-----------------------
+Where we put pagination ui into blade page
+@include('/includes/paginate')
+-----------------------
+
+
+Sample Controller
+-----------------
+    public function whichGoodsAreInTransit(Request $request)
+    {
+
+        $token = Session::get('authorization_token');
+
+        $which_good_are_in_transit = $this->postCall('/import/which-goods-are-in-transit', $request->all(), $token);
+
+        $compositions = $this->postCall('/import/composition-list', [], $token);
+        $lc_no_s = $this->postCall('/import/lc-number-list', [], $token);
+
+
+        $reports = collect($which_good_are_in_transit->data->data);
+        $compositions = collect($compositions->data->composition);
+        $lc_no_s = collect($lc_no_s->data->lc_number_list);
+
+        $compositions = $compositions->mapWithKeys(function ($item){
+            return [$item->id=>$item->composition];
+        });
+        $lc_number = $lc_no_s->mapWithKeys(function ($item){
+            return [$item->id=>$item->lc_number];
+        });
+
+        $paginator = $which_good_are_in_transit->data->paginator;
+
+        return view('pages.report.whichGoodsAreInTransit', compact('reports', 'compositions', 'lc_number','paginator'));
+    }
+    
+ ---------------
+ 
+ 
+ helpers function need to be include
+ ---------------
+ 
+     function generate_all_req_to_query_params($arr)
+    {
+        $additional_query_params = '&';
+        foreach ($arr as $key => $value) {
+            // dd($key);
+            // dd($value);
+            if ($key!='page') {
+                $additional_query_params = $additional_query_params.$key.'='.$value.'&';
+            }
+        }
+        // dd($additional_query_params);
+        return $additional_query_params;
+    }
+---------------
